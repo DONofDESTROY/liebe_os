@@ -1,0 +1,4 @@
+# binary files
+*.bin
+# object files
+*.o
