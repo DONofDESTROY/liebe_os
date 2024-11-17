@@ -1,4 +1,7 @@
 #include "kernel.h"
+#include "../idt/idt.h"
+#include "../io/io.h"
+#include "../memory/heap/kheap.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -72,6 +75,12 @@ void print(const char *str) {
 
 void kernel_main() {
   terminal_initialize();
+
   print("Hello world!\ntest");
-  print("\n\ntest2");
+
+  kheap_init();
+
+  idt_init();
+
+  enable_interrupts();
 }
