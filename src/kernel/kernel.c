@@ -2,12 +2,14 @@
 #include "../idt/idt.h"
 #include "../io/io.h"
 #include "../memory/heap/kheap.h"
+#include "../memory/paging/paging.h"
 #include <stddef.h>
 #include <stdint.h>
 
 uint16_t *video_mem = 0;
 uint16_t terminal_row = 0;
 uint16_t terminal_col = 0;
+static struct page_directory *page_directory_obj = 0;
 
 /*
  * creates a 16 bit int with char at first half and color on second half
@@ -74,13 +76,26 @@ void print(const char *str) {
 }
 
 void kernel_main() {
+  // clear terminal
   terminal_initialize();
 
+  // print stuff for debugging
   print("Hello world!\ntest");
 
+  // initalize heap memory
   kheap_init();
 
+  // initialize interrupts
   idt_init();
 
+  // create page directory
+  page_directory_obj = create_new_page_directory(
+      PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
+
+  page_switch(get_page_directory_entry(page_directory_obj));
+
+  enable_paging();
+
+  // enable interrupts
   enable_interrupts();
 }

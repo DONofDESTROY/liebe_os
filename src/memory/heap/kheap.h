@@ -17,6 +17,12 @@ void kheap_init();
 void *kmalloc(size_t size);
 
 /*
+ * allocates and returns a ptr in memory with data set to 0x00
+ * @param size size required from heap
+ */
+void *kzalloc(size_t size);
+
+/*
  * wrapper fn to free the memory in the kernel heap
  * @param *ptr ptr to the memory to free
  */
