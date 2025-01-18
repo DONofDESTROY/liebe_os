@@ -14,4 +14,11 @@
 #define LIEBE_OS_HEAP_TABLE_ADDRESS                                            \
   0x00007E00 // address of the table for heap status
 
+// Disk
+#define LIEBE_OS_SECTOR_SIZE 512
+
+
+// FS
+#define LIEBE_OS_MAX_PATH_LEN 108
+
 #endif // !CONFIG_H

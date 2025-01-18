@@ -1,8 +1,11 @@
 #include "kernel.h"
+#include "../disk/disk.h"
+#include "../fs/pparser.h"
 #include "../idt/idt.h"
 #include "../io/io.h"
 #include "../memory/heap/kheap.h"
 #include "../memory/paging/paging.h"
+#include "../string/string.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -58,16 +61,6 @@ void terminal_initialize() {
   }
 }
 
-/*returns the size of string
- */
-size_t strlen(const char *str) {
-  size_t len = 0;
-  while (str[len]) {
-    len++;
-  }
-  return len;
-}
-
 void print(const char *str) {
   size_t len = strlen(str);
   for (int i = 0; i < len; i++) {
@@ -80,7 +73,10 @@ void kernel_main() {
   terminal_initialize();
 
   // print stuff for debugging
-  print("Hello world!\ntest");
+  print("test1\ntest2\ntest3");
+
+  // search and initalize the disks
+  disk_search_and_init();
 
   // initalize heap memory
   kheap_init();
@@ -98,4 +94,10 @@ void kernel_main() {
 
   // enable interrupts
   enable_interrupts();
+
+  struct path_root *path = pathparser_parse("0:/usr/bin/summa.out", NULL);
+
+  if (path) {
+    // do nothing
+  }
 }
