@@ -5,10 +5,39 @@ BITS 16
 CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
 
-_start:
-    jmp short start
-    nop
- times 33 db 0
+; FAT 16 file system essentials
+; jmp to start and ignore the fat16 header 
+; refer https://wiki.osdev.org/FAT for more details
+jmp short start
+nop
+
+; FAT16 Header
+OEMIdentifier         db 'LIEBEOS '        ; should be 8 bytes in size
+BytesPerSector        dw 0x200             ; no of bytes per sector
+SectorsPerCluster     db 0x80              ; no of sectors per cluster 
+ReservedSectors       dw 0x200             ; where kernel is stored dont change for file
+FATCopies             db 0x02              ; 2 FAT tables, 1 original 1 copy
+RootDirEntries        dw 0x40              ; how many folders/files in root dir
+NumSectors            dw 0x00              ; total sectors ie > 65535 sectors in volume
+MediaType             db 0xF8              ; media descriptor type 0xf8 = fixed disk
+SectorsPerFat         dw 0x100             ; no of sectors per fat
+; chs stuff
+SectorsPerTrack       dw 0x20              ; no of sectors per track
+NumberOfHeads         dw 0x40              ; no of heads in hdd
+HiddenSectors         dd 0x00              ; no of hidden sectors (LBA addressing)
+; end chs stuff
+SectorsBig            dd 0x773594          ; total sectors if > 65535
+
+; Extended BPB (DOS 4.0)
+DriveNumber           db 0x80              ; 0x80 for hdd
+WinNTBit              db 0x00              ; flags for windows nt
+Signature             db 0x29              ; signature must be 0x28 or 0x29
+VolumeId              dd 0xD105            ; id used  for tracking volumnes in computer
+VolumeIDString        db 'LIEBE BOOT '     ; label for volume 11 bytes long
+SystemIDString        db 'FAT16   '        ; fat type
+
+
+
 
 start:
   jmp 0:step2 
