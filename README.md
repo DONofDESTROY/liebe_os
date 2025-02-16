@@ -4,7 +4,7 @@
 ⚠️Note: Not tested on real hardware use it on your own risk ⚠️
 
 # Plan to add these
-- [ ] Memory management.
+- [X] ~Memory management.~
 - [ ] file system.
 - [ ] process management.
 - [ ] GUI(Maybe)
