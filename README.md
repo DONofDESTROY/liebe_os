@@ -4,7 +4,7 @@
 ⚠️Note: Not tested on real hardware use it on your own risk ⚠️
 
 # Plan to add these
-- [ ] Memory management.
+- [X] ~Memory management.~
 - [ ] file system.
 - [ ] process management.
 - [ ] GUI(Maybe)
@@ -13,10 +13,10 @@
 
 # build
 0. Make the scripts in the scripts folder as executable 
-1. need a cross compiler (without std libs and os specific interrupts), there ia script on scripts folder or arch linux run it!
+1. need a cross compiler (without std libs and os specific interrupts), there is a script on scripts folder for arch linux run it!
 2. run build.sh
 # run 
-run ` make run ` on the root repo to run through qemu
+run ` make run ` on the root of the repo to run through qemu.
 
 ## some scribbles that I drew to understand this,
 ⚠️Note: these logic might not be used in the code or updated its just for understanding the process ⚠️
