@@ -1,5 +1,6 @@
 #include "disk.h"
 #include "../config.h"
+#include "../fs/file.h"
 #include "../io/io.h"
 #include "../memory/memory.h"
 #include "../status.h"
@@ -38,12 +39,14 @@ void disk_search_and_init() {
   memset(&disk_obj, 0, sizeof(disk_obj));
   disk_obj.type = LIEBE_OS_DISK_TYPE_REAL;
   disk_obj.sector_size = LIEBE_OS_SECTOR_SIZE;
+  disk_obj.filesystem = fs_resolve(&disk_obj);
+  disk_obj.id = LIEBE_OS_DEFAULT_DISK_ID;
 }
 
 // get disk obj
 struct disk *disk_get(int index) {
   // for the time being only disk 0 is allowed
-  if (index != 0) {
+  if (index != LIEBE_OS_DEFAULT_DISK_ID) {
     return 0;
   }
   return &disk_obj;

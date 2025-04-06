@@ -13,7 +13,7 @@ nop
 
 ; FAT16 Header
 OEMIdentifier         db 'LIEBEOS '        ; should be 8 bytes in size
-BytesPerSector        dw 0x200             ; no of bytes per sector
+BytesPerSector        dw 0x200             ; no of bytes per sector ie(512 bytes)
 SectorsPerCluster     db 0x80              ; no of sectors per cluster 
 ReservedSectors       dw 0x200             ; where kernel is stored dont change for file
 FATCopies             db 0x02              ; 2 FAT tables, 1 original 1 copy

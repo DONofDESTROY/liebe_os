@@ -75,11 +75,14 @@ void kernel_main() {
   // print stuff for debugging
   print("test1\ntest2\ntest3");
 
-  // search and initalize the disks
-  disk_search_and_init();
-
   // initalize heap memory
   kheap_init();
+
+  // initialize the filesystems
+  fs_init();
+
+  // search and initalize the disks
+  disk_search_and_init();
 
   // initialize interrupts
   idt_init();

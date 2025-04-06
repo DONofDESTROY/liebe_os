@@ -27,18 +27,18 @@ int diskstreamer_read(struct disk_stream *stream_obj, void *out, int total) {
   // calc
   int sector = stream_obj->pos / LIEBE_OS_SECTOR_SIZE;
   int offset = stream_obj->pos % LIEBE_OS_SECTOR_SIZE;
-  char bufer[LIEBE_OS_SECTOR_SIZE];
+  char buffer[LIEBE_OS_SECTOR_SIZE];
 
-  int res = disk_read_block(stream_obj->disk, sector, 1, bufer);
+  int res = disk_read_block(stream_obj->disk, sector, 1, buffer);
   if (res < 0) {
     goto out;
   }
 
   int total_to_read =
       total > LIEBE_OS_SECTOR_SIZE ? LIEBE_OS_SECTOR_SIZE : total;
-  // transer the data from buffer into the passed ref
+  // transfer the data from buffer into the passed ref
   for (int i = 0; i < total_to_read; i++) {
-    *(char *)out++ = bufer[offset + i];
+    *(char *)out++ = buffer[offset + i];
   }
 
   // adjust the stream
