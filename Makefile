@@ -10,6 +10,10 @@ all: ./bin/boot.bin ./bin/kernel.bin
 	sudo mount -t vfat ./bin/os.bin /mnt/d
 	# copy a dummy file
 	sudo cp ./hello.txt /mnt/d
+
+	# create a dummy folder
+	sudo mkdir /mnt/d/folder
+
 	# unmount the bin
 	sudo umount /mnt/d
 	

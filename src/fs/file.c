@@ -9,6 +9,7 @@
 #include "../string/string.h"
 #include "./fat/fat16.h"
 #include "pparser.h"
+#include <stdbool.h>
 
 struct filesystem *filesystems[LIEBE_OS_MAX_FILESYSTEMS];
 struct file_descriptor *file_descriptors[LIEBE_OS_MAX_FILE_DESCRIPTORS];
@@ -149,6 +150,7 @@ int fopen(const char *filename, const char *mode_str) {
     goto exit_fn;
   }
 
+  // call the open fn ptr
   void *descriptor_private_data =
       disk_obj->filesystem->open(disk_obj, root_node->first, mode);
 

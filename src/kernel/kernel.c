@@ -103,4 +103,13 @@ void kernel_main() {
   if (path) {
     // do nothing
   }
+
+  int fd = fopen("0:/folder", "r");
+  if (!fd) {
+    print("\n failed to load the text");
+  } else {
+    print("\n loaded successfully");
+  }
+  while (1) {
+  }
 }

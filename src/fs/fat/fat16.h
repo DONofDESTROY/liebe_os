@@ -25,8 +25,8 @@
 
 // Used to mark the wheather it is a file or sub directory
 typedef unsigned int FAT_ITEM_TYPE;
-#define FAT_ITEM_TYPE_DIRECTORY 0;
-#define FAT_ITEM_TYPE_FILE 1;
+#define FAT_ITEM_TYPE_DIRECTORY 0
+#define FAT_ITEM_TYPE_FILE 1
 
 // fat header structure (similar to one found on boot.asm)
 // main fat header
@@ -102,7 +102,7 @@ struct fat_item {
 };
 
 // usefull for file reading
-struct fat_item_descriptor {
+struct fat_file_descriptor {
   struct fat_item *item;
   uint32_t pos;
 };

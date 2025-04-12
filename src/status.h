@@ -7,5 +7,6 @@
 #define ENOMEM 3   // No memory
 #define EBADPATH 4 // bad file path
 #define EFSNOTUS 5 // res indicating that current fs failed to resolve
+#define ERDONLY 6  // readonly
 
 #endif // !STATUS_H
