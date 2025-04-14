@@ -72,6 +72,12 @@ static int file_new_decriptor(struct file_descriptor **desc_out) {
   return res;
 }
 
+static int file_free_descriptor(struct file_descriptor *desc) {
+  file_descriptors[desc->index - 1] = 0x00;
+  kfree(desc);
+  return 0;
+}
+
 // returns the file descriptor based on passed index
 static struct file_descriptor *file_get_descriptor(int fd) {
   if (fd <= 0 || fd >= LIEBE_OS_MAX_FILE_DESCRIPTORS) {
@@ -177,5 +183,82 @@ int fopen(const char *filename, const char *mode_str) {
 exit_fn:
   if (ISERR_I(res))
     res = 0;
+  return res;
+}
+
+// fills the buffer from the file
+int fread(void *ptr, uint32_t size, uint32_t nmemb, int fd) {
+  int res = 0;
+  if (size == 0 || nmemb == 0 || fd < 1) {
+    // invalid args
+    res = -EINVARG;
+    goto exit_fn;
+  }
+
+  // get the file descripotr for the passed id
+  struct file_descriptor *desc = file_get_descriptor(fd);
+  if (!desc) {
+    // couldn't find the desc
+    res = -EIO;
+    goto exit_fn;
+  }
+
+  // call the read ptr
+  res = desc->filesystem->read(desc->disk, desc->pvt, size, nmemb, (char *)ptr);
+
+exit_fn:
+  return res;
+}
+
+// sets the position for reading position
+int fseek(int fd, int offset, FILE_SEEK_MODE whence) {
+  int res = 0;
+
+  struct file_descriptor *desc = file_get_descriptor(fd);
+  if (!desc) {
+    // couldn't find the descriptor
+    res = -EIO;
+    goto exit_fn;
+  }
+  // call the seek fn ptr
+  res = desc->filesystem->seek(desc->pvt, offset, whence);
+
+exit_fn:
+  return res;
+}
+
+// returns the stats about the file (only returns size and readonly)
+int fstat(int fd, struct file_stat *stat) {
+  int res = 0;
+  struct file_descriptor *desc = file_get_descriptor(fd);
+  if (!desc) {
+    // couldnn't find the desc
+    res = -EIO;
+    goto exit_fn;
+  }
+
+  // call teh filestystem fn ptr
+  res = desc->filesystem->stat(desc->disk, desc->pvt, stat);
+
+exit_fn:
+  return res;
+}
+
+// clears the allocated memory
+int fclose(int fd) {
+  int res = 0;
+  struct file_descriptor *desc = file_get_descriptor(fd);
+  if (!desc) {
+    // couldn't find the desc
+    res = -EIO;
+    goto exit_fn;
+  }
+  res = desc->filesystem->close(desc->pvt);
+  if (res == OK) {
+    // clear the desc ptr
+    file_free_descriptor(desc);
+  }
+
+exit_fn:
   return res;
 }

@@ -5,11 +5,18 @@
 
 # Plan to add these
 - [X] ~Memory management.~
-- [ ] file system.
+- [X] ~file system~(still have write).
 - [ ] process management.
 - [ ] GUI(Maybe)
 - [ ] shell
-  
+- [ ] fswrite
+
+# DEBUGGING
+run gbd
+### and run these command to add symbols
+add-symbol-file ./build/kernelfull.o 0x100000
+### run qemu and attach gdb
+target remote | qemu-system-i386 -hda ./bin/os.bin -S -gdb stdio
 
 # build
 0. Make the scripts in the scripts folder as executable 

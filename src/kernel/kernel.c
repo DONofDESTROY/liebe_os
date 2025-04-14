@@ -68,6 +68,16 @@ void print(const char *str) {
   }
 }
 
+/*
+ * function that keeps the kernel in halt state and prints the passed fn
+ */
+void panic(const char *msg) {
+  print(msg);
+  while (1) {
+    // do nothing
+  }
+}
+
 void kernel_main() {
   // clear terminal
   terminal_initialize();
@@ -104,11 +114,18 @@ void kernel_main() {
     // do nothing
   }
 
-  int fd = fopen("0:/folder", "r");
+  int fd = fopen("0:/hello.txt", "r");
   if (!fd) {
     print("\n failed to load the text");
   } else {
+    struct file_stat s;
+    fstat(fd, &s);
+
     print("\n loaded successfully");
+    char buf[20];
+    fseek(fd, 4, SEEK_SET);
+    fread(buf, 20, 1, fd);
+    print(buf);
   }
   while (1) {
   }
