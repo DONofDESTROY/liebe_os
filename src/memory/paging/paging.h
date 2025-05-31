@@ -30,4 +30,12 @@ uintptr_t *get_page_directory_entry(struct page_directory *);
 
 int paging_set(uintptr_t *directory, void *virt, uint32_t val);
 
+void paging_free_4gb(struct page_directory *chunk);
+
+int paging_map_to(uintptr_t *directory, void *virt, void *phys, void *phys_end,
+                  int flags);
+int paging_map_range(uintptr_t *directory, void *virt, void *phys, int count,
+                     int flags);
+int paging_map(uintptr_t *directory, void *virt, void *phys, int flags);
+void *paging_align_address(void *ptr);
 #endif

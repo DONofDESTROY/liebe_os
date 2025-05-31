@@ -21,4 +21,6 @@ char to_lower(char c);
 
 int strnlen_terminator(const char *str, int max, char terminator);
 
+char *strncpy(char *dest, const char *src, int count);
+
 #endif // !STRING_H

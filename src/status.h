@@ -9,5 +9,6 @@
 #define EFSNOTUS 5 // res indicating that current fs failed to resolve
 #define ERDONLY 6  // readonly
 #define EUNIMP 7   // un-implemented
+#define EISTKN 8   // is taken
 
 #endif // !STATUS_H

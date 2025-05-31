@@ -1,0 +1,112 @@
+#include "task.h"
+#include "../kernel/kernel.h"
+#include "../macros.h"
+#include "../memory/heap/kheap.h"
+#include "../memory/memory.h"
+#include "../status.h"
+#include <stdint.h>
+
+// ptr for the current excuting task
+struct task *current_task = 0;
+
+// task linked list ptrs
+struct task *task_tail = 0;
+struct task *task_head = 0;
+
+int task_init(struct task *task, struct process *process);
+
+// fn to expose current task var
+struct task *task_current() { return current_task; }
+
+// fn to create a new task
+struct task *task_new(struct process *process) {
+  int res = 0;
+  struct task *task = kzalloc(sizeof(struct task));
+
+  if (!task) {
+    res = -ENOMEM;
+    goto exit_fn;
+  }
+
+  res = task_init(task, process);
+  if (res != OK) {
+    goto exit_fn;
+  }
+
+  if (task_head == 0) {
+    // create a fresh linked list if not exist
+    task_head = task;
+    task_tail = task;
+    goto exit_fn;
+  }
+
+  // append the task to task tail
+  task_tail->next = task;
+  task->prev = task_tail;
+  task_tail = task;
+
+exit_fn:
+  if (ISERR(res)) {
+    task_free(task);
+    return ERROR((uintptr_t)res);
+  }
+  return task;
+}
+
+// returns the next executable task
+struct task *task_get_next() {
+  if (!current_task->next) {
+    return task_head;
+  }
+  return current_task->next;
+}
+
+static void task_list_remove(struct task *task) {
+
+  if (task->prev) {
+    // remove the task if it is in between
+    task->prev->next = task->next;
+  }
+  if (task == task_head) {
+    // remove the task if it is head
+    task_head = task->next;
+  }
+  if (task == task_tail) {
+    // change the tail if the task is tail
+    task_tail = task->prev;
+  }
+
+  if (task == current_task) {
+    current_task = task_get_next();
+  }
+}
+
+int task_free(struct task *task) {
+  // free the page table
+  paging_free_4gb(task->page_directory);
+  // remove it from the linked list
+  task_list_remove(task);
+
+  // free the allocated memeory
+  kfree(task);
+  return 0;
+}
+
+int task_init(struct task *task, struct process *process) {
+  memset(task, 0, sizeof(struct task));
+
+  task->page_directory =
+      create_new_page_directory(PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
+  if (task->page_directory) {
+    return -EIO;
+  }
+
+  // init the task registers
+  task->registers.ip = LIEBE_OS_PROGRAM_VIRTUAL_ADDRESS;
+  task->registers.ss = USER_DATA_SEGMENT;
+  task->registers.esp = LIEBE_OS_PROGRAM_VIRTUAL_STACK_ADDRESS_START;
+
+  task->process = process;
+
+  return 0;
+}

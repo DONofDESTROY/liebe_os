@@ -1,11 +1,15 @@
 #include "kernel.h"
+#include "../config.h"
 #include "../disk/disk.h"
 #include "../fs/pparser.h"
+#include "../gdt/gdt.h"
 #include "../idt/idt.h"
 #include "../io/io.h"
 #include "../memory/heap/kheap.h"
+#include "../memory/memory.h"
 #include "../memory/paging/paging.h"
 #include "../string/string.h"
+#include "../task/tss.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -78,12 +82,58 @@ void panic(const char *msg) {
   }
 }
 
+struct tss tss;
+// actual gdt format
+struct gdt gdt_real[LIEBE_OS_TOTAL_GDT_SEGMENTS];
+// gdt declartion for ease of life
+// struct gdt_structured gdt_structured[LIEBE_OS_TOTAL_GDT_SEGMENTS];
+
+// void init_gdt() {
+//   gdt_structured[0] = (struct gdt_structured){
+//       .base = 0x00, .limit = 0x00, .type = 0x00}; // NULL
+//   gdt_structured[1] = (struct gdt_structured){
+//       .base = 0x00, .limit = 0xFFFFFFFF, .type = 0x9A}; // KERNEL CODE
+//   gdt_structured[2] = (struct gdt_structured){
+//       .base = 0x00, .limit = 0xFFFFFFFF, .type = 0x92}; // KERNEL DATA
+//   gdt_structured[3] = (struct gdt_structured){
+//       .base = 0x00, .limit = 0xFFFFFFFF, .type = 0xF8}; // USER CODE
+//   gdt_structured[4] = (struct gdt_structured){
+//       .base = 0x00, .limit = 0xFFFFFFFF, .type = 0xF2}; // USER DATA
+//   gdt_structured[5] = (struct gdt_structured){
+//       .base = (uintptr_t)&tss, .limit = sizeof(tss), .type = 0xE9}; // TSS
+// }
+
+struct gdt_structured gdt_structured[LIEBE_OS_TOTAL_GDT_SEGMENTS] = {
+    {.base = 0x00, .limit = 0x00, .type = 0x00},       // NULL SEGMENT
+    {.base = 0x00, .limit = 0xffffffff, .type = 0x9a}, // KERNEL CODE SEG
+    {.base = 0x00, .limit = 0xffffffff, .type = 0x92}, // KERNEL DATA SEG
+
+    {.base = 0x00, .limit = 0xffffffff, .type = 0xf8}, // USER CODE SEG
+    {.base = 0x00, .limit = 0xffffffff, .type = 0xf2}, // USER DATA SEG
+
+    {.base = 0x00, .limit = sizeof(tss), .type = 0xE9}, //  TSS SEG
+};
+
 void kernel_main() {
+
+  // init the address o tss on the segment
+  gdt_structured[5].base = (uintptr_t)&tss;
+
+  // init the gdt segments
+  // init_gdt();
+
   // clear terminal
   terminal_initialize();
 
   // print stuff for debugging
   print("test1\ntest2\ntest3");
+
+  memset(gdt_real, 0x00, sizeof(gdt_real));
+
+  gdt_structured_to_gdt(gdt_real, gdt_structured, LIEBE_OS_TOTAL_GDT_SEGMENTS);
+
+  // load the gdt
+  gdt_load(gdt_real, sizeof(gdt_real));
 
   // initalize heap memory
   kheap_init();
@@ -96,6 +146,14 @@ void kernel_main() {
 
   // initialize interrupts
   idt_init();
+
+  // setup the tss
+  memset(&tss, 0x00, sizeof(tss));
+  tss.esp0 = 0x600000;
+  tss.ss0 = KERNEL_DATA_SELECTOR;
+
+  // load the tss
+  tss_load(0x28);
 
   // create page directory
   page_directory_obj = create_new_page_directory(
