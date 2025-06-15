@@ -167,6 +167,7 @@ int process_load_for_slot(const char *fileName, struct process **process,
   if (ERROR_I(task) == 0) {
     // failed to create new task
     res = ERROR_I(task);
+    goto exit_fn;
   }
 
   // assign the task with the process

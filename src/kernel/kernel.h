@@ -9,4 +9,9 @@ void print(const char *str);
 
 void panic(const char *msg);
 
+// switches the page to kernel page
+void kernel_page();
+// handles the kernel segment registers
+void kernel_registers();
+
 #endif // !KERNEL_H

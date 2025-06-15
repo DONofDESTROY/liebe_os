@@ -5,10 +5,13 @@
 #include "../gdt/gdt.h"
 #include "../idt/idt.h"
 #include "../io/io.h"
+#include "../isr80h/isr80h.h"
 #include "../memory/heap/kheap.h"
 #include "../memory/memory.h"
 #include "../memory/paging/paging.h"
 #include "../string/string.h"
+#include "../task/process.h"
+#include "../task/task.h"
 #include "../task/tss.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -85,24 +88,8 @@ void panic(const char *msg) {
 struct tss tss;
 // actual gdt format
 struct gdt gdt_real[LIEBE_OS_TOTAL_GDT_SEGMENTS];
+
 // gdt declartion for ease of life
-// struct gdt_structured gdt_structured[LIEBE_OS_TOTAL_GDT_SEGMENTS];
-
-// void init_gdt() {
-//   gdt_structured[0] = (struct gdt_structured){
-//       .base = 0x00, .limit = 0x00, .type = 0x00}; // NULL
-//   gdt_structured[1] = (struct gdt_structured){
-//       .base = 0x00, .limit = 0xFFFFFFFF, .type = 0x9A}; // KERNEL CODE
-//   gdt_structured[2] = (struct gdt_structured){
-//       .base = 0x00, .limit = 0xFFFFFFFF, .type = 0x92}; // KERNEL DATA
-//   gdt_structured[3] = (struct gdt_structured){
-//       .base = 0x00, .limit = 0xFFFFFFFF, .type = 0xF8}; // USER CODE
-//   gdt_structured[4] = (struct gdt_structured){
-//       .base = 0x00, .limit = 0xFFFFFFFF, .type = 0xF2}; // USER DATA
-//   gdt_structured[5] = (struct gdt_structured){
-//       .base = (uintptr_t)&tss, .limit = sizeof(tss), .type = 0xE9}; // TSS
-// }
-
 struct gdt_structured gdt_structured[LIEBE_OS_TOTAL_GDT_SEGMENTS] = {
     {.base = 0x00, .limit = 0x00, .type = 0x00},       // NULL SEGMENT
     {.base = 0x00, .limit = 0xffffffff, .type = 0x9a}, // KERNEL CODE SEG
@@ -113,6 +100,12 @@ struct gdt_structured gdt_structured[LIEBE_OS_TOTAL_GDT_SEGMENTS] = {
 
     {.base = 0x00, .limit = sizeof(tss), .type = 0xE9}, //  TSS SEG
 };
+
+// switches the current page to kernel page
+void kernel_page() {
+  kernel_registers();
+  page_switch((uintptr_t *)page_directory_obj->directory_entry);
+}
 
 void kernel_main() {
 
@@ -163,28 +156,14 @@ void kernel_main() {
 
   enable_paging();
 
+  isr80h_register_commands();
+
   // enable interrupts
-  enable_interrupts();
-
-  struct path_root *path = pathparser_parse("0:/usr/bin/summa.out", NULL);
-
-  if (path) {
-    // do nothing
+  // enable_interrupts();
+  struct process *process = 0;
+  int res = process_load("0:/blank.bin", &process);
+  if (res != 0) {
+    print("panic");
   }
-
-  int fd = fopen("0:/hello.txt", "r");
-  if (!fd) {
-    print("\n failed to load the text");
-  } else {
-    struct file_stat s;
-    fstat(fd, &s);
-
-    print("\n loaded successfully");
-    char buf[20];
-    fseek(fd, 4, SEEK_SET);
-    fread(buf, 20, 1, fd);
-    print(buf);
-  }
-  while (1) {
-  }
+  task_run_first_ever_task();
 }

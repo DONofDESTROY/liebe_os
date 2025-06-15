@@ -1,5 +1,6 @@
 [BITS 32]
 global _start
+global kernel_registers
 extern kernel_main
 
 
@@ -37,6 +38,15 @@ _start:
     call kernel_main
 
     jmp $
+
+
+kernel_registers:
+  mov ax, 0x10
+  mov ds, ax
+  mov es, ax
+  mov gs, ax
+  mov fs, ax
+  ret
 
 
 times 512-($ - $$) db 0 ; nasm way of saying fill the rest of 510 bytes with 0

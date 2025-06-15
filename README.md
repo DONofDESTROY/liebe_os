@@ -15,8 +15,11 @@
 run gbd
 ### and run these command to add symbols
 add-symbol-file ./build/kernelfull.o 0x100000
+### for debugging user programs 
+break *0x400000
 ### run qemu and attach gdb
 target remote | qemu-system-i386 -hda ./bin/os.bin -S -gdb stdio
+
 
 # build
 0. Make the scripts in the scripts folder as executable 
