@@ -38,4 +38,6 @@ int paging_map_range(uintptr_t *directory, void *virt, void *phys, int count,
                      int flags);
 int paging_map(uintptr_t *directory, void *virt, void *phys, int flags);
 void *paging_align_address(void *ptr);
+
+uintptr_t paging_get(uintptr_t *directory, void *virt);
 #endif

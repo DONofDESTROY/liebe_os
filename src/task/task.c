@@ -5,6 +5,7 @@
 #include "../memory/memory.h"
 #include "../memory/paging/paging.h"
 #include "../status.h"
+#include "../string/string.h"
 #include <stdint.h>
 
 // ptr for the current excuting task
@@ -106,6 +107,12 @@ int task_page() {
   return 0;
 }
 
+int task_page_task(struct task *task) {
+  user_registers();
+  page_switch(task->page_directory->directory_entry);
+  return 0;
+}
+
 void task_run_first_ever_task() {
   if (!current_task) {
     panic("task_run_first_ever_task(): No current task exists!\n");
@@ -157,4 +164,59 @@ void task_current_save_state(struct interrupt_frame *frame) {
 
   struct task *task = task_current();
   task_save_state(task, frame);
+}
+
+int copy_string_from_task(struct task *task, void *virtual, void *physical,
+                          int max) {
+  if (max >= PAGE_SIZE) {
+    // limiting to 1 page size
+    return -EINVARG;
+  }
+
+  int res = 0;
+  // tmp memory to hold entry from task
+  char *tmp = kzalloc(max);
+  if (!tmp) {
+    res = -ENOMEM;
+    goto exit_fn;
+  }
+
+  uintptr_t *task_directory = task->page_directory->directory_entry;
+  uintptr_t old_entry = paging_get(task_directory, tmp);
+  paging_map(task->page_directory->directory_entry, tmp, tmp,
+             PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
+  // switch to the task page
+  page_switch(task->page_directory->directory_entry);
+  // copy the mem of the task page
+  strncpy(tmp, virtual, max);
+  // switch back to kernel page
+  kernel_page();
+
+  res = paging_set(task_directory, tmp, old_entry);
+  if (res < 0) {
+    res = -EIO;
+    goto out_free;
+  }
+
+  strncpy(physical, tmp, max);
+
+out_free:
+  kfree(tmp);
+
+exit_fn:
+  return res;
+}
+
+// get the params from the task's stack
+void *task_get_stack_item(struct task *task, int index) {
+  void *result = 0;
+  uint32_t *sp_ptr = (uint32_t *)(uintptr_t)task->registers.esp;
+  // swith to the passed task page
+  task_page_task(task);
+
+  result = (void *)(uintptr_t)sp_ptr[index];
+
+  // switch back to kernel page
+  kernel_page();
+  return result;
 }

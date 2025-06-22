@@ -26,6 +26,12 @@ struct process {
   // the size of the data pointed by the ptr
   uint32_t size;
 
+  struct keyboard_buffer {
+    char buffer[LIEBE_OS_KEYBOARD_BUFFER_SIZE];
+    int head;
+    int tail;
+  } keyboard;
+
 } __attribute__((packed));
 
 int process_load_for_slot(const char *fileName, struct process **process,
@@ -33,4 +39,5 @@ int process_load_for_slot(const char *fileName, struct process **process,
 
 int process_load(const char *filename, struct process **process);
 
+struct process *process_current();
 #endif // !PROCESS_H

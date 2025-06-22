@@ -108,7 +108,7 @@ int paging_map_range(uintptr_t *directory, void *virt, void *phys, int count,
   int res = 0;
   for (int i = 0; i < count; i++) {
     res = paging_map(directory, virt, phys, flags);
-    if (res == 0)
+    if (res < 0)
       break;
     virt += PAGE_SIZE;
     phys += PAGE_SIZE;
@@ -150,4 +150,14 @@ int paging_map_to(uintptr_t *direcotry, void *virt, void *phys, void *phys_end,
 
 exit_fn:
   return res;
+}
+
+// returns the physical address for the passed virtual address
+uintptr_t paging_get(uintptr_t *directory, void *virtual) {
+  struct page_location page_location_obj = get_page_indexs(virtual);
+  uint32_t directory_index = page_location_obj.directory_index;
+  uint32_t table_index = page_location_obj.table_index;
+  uintptr_t entry = directory[directory_index];
+  uintptr_t *table = (uintptr_t *)(entry & 0xfffff000);
+  return table[table_index];
 }
