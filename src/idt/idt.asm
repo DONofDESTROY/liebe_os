@@ -13,19 +13,45 @@ global idt_load
   iret                      ; return from the interrupts
 %endmacro
 
+%macro interrupt 1
+  global int%1
+  int%1:
+      pushad
+      ; to save the stack ptr 
+      push esp
+      ; to pass the interrupt number to the handler
+      push dword %1
+      ; calling the c func
+      call interrupt_handler
+      ; clean the pushed items on the stack
+      add esp, 8
+      popad
+      iret
+%endmacro
+
+; init i = 0;
+%assign i 0
+; iterate through 512 times
+%rep 512
+  ; create interrupt<number>
+  interrupt i
+; increment i by 1
+%assign i i+1
+%endrep
+
 ; from c files 
 extern int_null_fn
 extern int_0_fn
-extern int_21h_fn
 extern isr80h_handler
+extern interrupt_handler
 
 ; for c files
 global int_null_handler
 global int_0_handler
-global int_21h_handler
 global enable_interrupts
 global disable_interrupts
 global isr80h_wrapper
+global interrupt_pointer_table
 
 
 idt_load:
@@ -57,9 +83,6 @@ int_0_handler:
 int_null_handler:
   interrupt_wrapper int_null_fn
 
-; keybaord
-int_21h_handler:
-  interrupt_wrapper int_21h_fn
 
 ; Kernel interrupts
 ; I am not using the wrapper because it has having a slighlty different structrue and I'm lazy to modify the wrapper
@@ -94,6 +117,20 @@ section .data
 tmp_res: dd 0           ; ptr to store eax value 
   
 
+%macro interrupt_array_entry 1
+  ; label of the int<number_passed>
+  dd int%1
+%endmacro
   
-
+interrupt_pointer_table:
+  ; init i
+  %assign i 0
+  ; iterate for 512 times
+  %rep 512
+    ; call the macro with i
+    interrupt_array_entry i
+  ; incremnet the i
+  %assign i i+1
+  ; end of the loop
+  %endrep
 

@@ -1,11 +1,12 @@
 #include "keyboard.h"
 #include "../kernel/kernel.h"
 #include "../status.h"
+#include "classic.h"
 
 static struct keyboard *keyboard_list_head = 0;
 static struct keyboard *keyboard_list_last = 0;
 
-void keyboard_init() {}
+void keyboard_init() { keyboard_insert(classic_init()); }
 
 int keyboard_insert(struct keyboard *keyboard) {
   int res = 0;
@@ -24,6 +25,7 @@ int keyboard_insert(struct keyboard *keyboard) {
     keyboard_list_head = keyboard;
     keyboard_list_last = keyboard;
   }
+  res = keyboard->init();
 
 exit_fn:
   return res;
@@ -38,6 +40,11 @@ void keyboard_push(char c) {
   // pushes the char into the process keyboard buffer
   struct process *process_obj = process_current();
   if (!process_obj) {
+    return;
+  }
+
+  if (c == 0) {
+    // so far no null characters
     return;
   }
 
@@ -62,7 +69,7 @@ char keyboard_pop() {
   int real_index = process->keyboard.head % sizeof(process->keyboard.buffer);
   char c = process->keyboard.buffer[real_index];
   if (c == 0x00) {
-    // Nothing to pop return zero.Add commentMore actions
+    // Nothing to pop return zero.
     return 0;
   }
 

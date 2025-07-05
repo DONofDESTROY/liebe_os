@@ -21,7 +21,25 @@ label:
   add esp, 4 ; reset the stack
 
 
+  call keyboard_print_stuff
+
   jmp $
+
+keyboard_print_stuff:
+  call getkey
+  push eax
+  mov eax,3 ; commad put char
+  int 0x80
+  add esp, 4
+  call keyboard_print_stuff
+
+getkey:
+    mov eax, 2 ; Command getkey
+    int 0x80
+    cmp eax, 0x00
+    je getkey
+    ret
+
 
 section .data
 message: db 'From the blank',0

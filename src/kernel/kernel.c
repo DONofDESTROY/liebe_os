@@ -6,6 +6,7 @@
 #include "../idt/idt.h"
 #include "../io/io.h"
 #include "../isr80h/isr80h.h"
+#include "../keyboard/keyboard.h"
 #include "../memory/heap/kheap.h"
 #include "../memory/memory.h"
 #include "../memory/paging/paging.h"
@@ -34,6 +35,25 @@ void terminal_putchar(int x, int y, char c, char color) {
 }
 
 /*
+ * Handle the backspace character while printing to the terminal
+ */
+
+void terminal_backspace() {
+
+  if (terminal_row == 0 && terminal_col == 0) {
+    return;
+  }
+
+  if (terminal_col == 0) {
+    terminal_row -= 1;
+    terminal_col = VGA_WIDTH;
+  }
+
+  terminal_col -= 1;
+  terminal_putchar(terminal_col, terminal_row, ' ', 15);
+}
+
+/*
  * handles the x and y and write to the video mem
  */
 void terminal_writechar(char c, char color) {
@@ -41,6 +61,12 @@ void terminal_writechar(char c, char color) {
     // handle new line char
     terminal_row += 1;
     terminal_col = 0;
+    return;
+  }
+
+  // backspace
+  if (c == 0x08) {
+    terminal_backspace();
     return;
   }
 
@@ -158,12 +184,18 @@ void kernel_main() {
 
   isr80h_register_commands();
 
+  keyboard_init();
+
   // enable interrupts
-  // enable_interrupts();
+  //  enable_interrupts();
   struct process *process = 0;
-  int res = process_load("0:/blank.bin", &process);
+  int res = process_load_switch("0:/blank.bin", &process);
   if (res != 0) {
     print("panic");
   }
+
   task_run_first_ever_task();
+
+  while (1) {
+  }
 }

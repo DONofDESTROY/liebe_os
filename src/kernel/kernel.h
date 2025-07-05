@@ -14,4 +14,5 @@ void kernel_page();
 // handles the kernel segment registers
 void kernel_registers();
 
+void terminal_writechar(char c, char color);
 #endif // !KERNEL_H
