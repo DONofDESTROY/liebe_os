@@ -161,3 +161,9 @@ uintptr_t paging_get(uintptr_t *directory, void *virtual) {
   uintptr_t *table = (uintptr_t *)(entry & 0xfffff000);
   return table[table_index];
 }
+
+void *paging_align_to_lower_page(void *addr) {
+  uint32_t _addr = (uint32_t)(uintptr_t)addr;
+  _addr -= (_addr % PAGE_SIZE);
+  return (void *)(uintptr_t)_addr;
+}

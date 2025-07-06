@@ -5,6 +5,11 @@
 #include "task.h"
 #include <stdint.h>
 
+#define PROCESS_FILETYPE_ELF 0
+#define PROCESS_FILETYPE_BINARY 1
+
+typedef unsigned char PROCESS_FILETYPE;
+
 struct process {
   // id of the process
   uint16_t id;
@@ -17,8 +22,13 @@ struct process {
   // need to clean the assigned memory
   void *allocations[LIEBE_OS_MAX_PROGRAM_ALLOCATIONS];
 
-  // physical ptr to process memory
-  void *ptr;
+  PROCESS_FILETYPE filetype;
+
+  union {
+    // The physical pointer to the process memory.
+    void *ptr;
+    struct elf_file *elf_file;
+  };
 
   // physical ptr to stack memory
   void *stack;

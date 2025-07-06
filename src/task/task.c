@@ -1,11 +1,13 @@
 #include "task.h"
 #include "../kernel/kernel.h"
+#include "../loader/formats/elfloader.h"
 #include "../macros.h"
 #include "../memory/heap/kheap.h"
 #include "../memory/memory.h"
 #include "../memory/paging/paging.h"
 #include "../status.h"
 #include "../string/string.h"
+#include "process.h"
 #include <stdint.h>
 
 // ptr for the current excuting task
@@ -130,8 +132,10 @@ int task_init(struct task *task, struct process *process) {
   if (!task->page_directory) {
     return -EIO;
   }
+  if (process->filetype == PROCESS_FILETYPE_ELF) {
+    task->registers.ip = elf_header(process->elf_file)->e_entry;
+  }
 
-  // init the task registers
   task->registers.ip = LIEBE_OS_PROGRAM_VIRTUAL_ADDRESS;
   task->registers.ss = USER_DATA_SEGMENT;
   task->registers.cs = USER_CODE_SEGMENT;

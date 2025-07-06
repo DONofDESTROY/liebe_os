@@ -1,5 +1,9 @@
 # binary files
 *.bin
+
+# elf build files
+*.elf
+
 # object files
 *.o
 
