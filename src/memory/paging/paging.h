@@ -42,5 +42,5 @@ void *paging_align_address(void *ptr);
 uintptr_t paging_get(uintptr_t *directory, void *virt);
 
 void *paging_align_to_lower_page(void *addr);
-
+void *paging_get_physical_address(uintptr_t *directory, void *virt);
 #endif

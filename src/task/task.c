@@ -132,11 +132,12 @@ int task_init(struct task *task, struct process *process) {
   if (!task->page_directory) {
     return -EIO;
   }
+
+  task->registers.ip = LIEBE_OS_PROGRAM_VIRTUAL_ADDRESS;
   if (process->filetype == PROCESS_FILETYPE_ELF) {
     task->registers.ip = elf_header(process->elf_file)->e_entry;
   }
 
-  task->registers.ip = LIEBE_OS_PROGRAM_VIRTUAL_ADDRESS;
   task->registers.ss = USER_DATA_SEGMENT;
   task->registers.cs = USER_CODE_SEGMENT;
   task->registers.esp = LIEBE_OS_PROGRAM_VIRTUAL_STACK_ADDRESS_START;
@@ -223,4 +224,21 @@ void *task_get_stack_item(struct task *task, int index) {
   // switch back to kernel page
   kernel_page();
   return result;
+}
+
+void *task_virtual_address_to_physical(struct task *task,
+                                       void *virtual_address) {
+  return paging_get_physical_address(task->page_directory->directory_entry,
+                                     virtual_address);
+}
+
+void task_next() {
+  // swithes to the next task on the list
+  struct task *next_task = task_get_next();
+  if (!next_task) {
+    panic("No more tasks!\n");
+  }
+
+  task_switch(next_task);
+  task_return(&next_task->registers);
 }

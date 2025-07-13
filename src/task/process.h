@@ -10,6 +10,21 @@
 
 typedef unsigned char PROCESS_FILETYPE;
 
+struct process_allocation {
+  void *ptr;
+  size_t size;
+};
+
+struct command_argument {
+  char argument[512];
+  struct command_argument *next;
+};
+
+struct process_arguments {
+  int argc;
+  char **argv;
+};
+
 struct process {
   // id of the process
   uint16_t id;
@@ -20,7 +35,7 @@ struct process {
 
   // the address of memory allocated if the process killed
   // need to clean the assigned memory
-  void *allocations[LIEBE_OS_MAX_PROGRAM_ALLOCATIONS];
+  struct process_allocation allocations[LIEBE_OS_MAX_PROGRAM_ALLOCATIONS];
 
   PROCESS_FILETYPE filetype;
 
@@ -42,7 +57,8 @@ struct process {
     int tail;
   } keyboard;
 
-} __attribute__((packed));
+  struct process_arguments arguments;
+};
 
 int process_load_for_slot(const char *fileName, struct process **process,
                           int process_slot);
@@ -53,4 +69,11 @@ struct process *process_current();
 
 int process_switch(struct process *process);
 int process_load_switch(const char *filename, struct process **process);
+void *process_malloc(struct process *process, size_t size);
+void process_free(struct process *process, void *ptr);
+
+void process_get_arguments(struct process *process, int *argc, char ***argv);
+int process_inject_arguments(struct process *process,
+                             struct command_argument *root_argument);
+int process_terminate(struct process *process);
 #endif // !PROCESS_H

@@ -27,6 +27,7 @@ int classic_keyboard_init() {
                                   classic_keyboard_handle_interrupt);
   // command to enable first ps2 port
   outb(PS2_PORT, PS2_COMMAND_ENABLE_FIRST_PORT);
+  keyboard_set_capslock(&classic_keyboard, KEYBOARD_CAPS_LOCK_OFF);
   return 0;
 }
 
@@ -38,6 +39,12 @@ uint8_t classic_keyboard_scancode_to_char(uint8_t scancode) {
     return 0;
   }
   char c = keyboard_scan_set_one[scancode];
+
+  if (keyboard_get_capslock(&classic_keyboard) == KEYBOARD_CAPS_LOCK_OFF) {
+    if (c >= 'A' && c <= 'Z') {
+      c += 32;
+    }
+  }
   return c;
 }
 
@@ -51,6 +58,15 @@ void classic_keyboard_handle_interrupt() {
 
   if (scancode & CLASSIC_KEYBOARD_KEY_RELEASED) {
     // ignore key relase for now
+    return;
+  }
+
+  if (scancode == CLASSIC_KEYBOARD_CAPSLOCK) {
+    KEYBOARD_CAPS_LOCK_STATE old_state =
+        keyboard_get_capslock(&classic_keyboard);
+    keyboard_set_capslock(&classic_keyboard, old_state == KEYBOARD_CAPS_LOCK_ON
+                                                 ? KEYBOARD_CAPS_LOCK_OFF
+                                                 : KEYBOARD_CAPS_LOCK_ON);
     return;
   }
 

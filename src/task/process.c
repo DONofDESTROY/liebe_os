@@ -140,7 +140,7 @@ static int process_map_elf(struct process *process) {
         process->task->page_directory->directory_entry,
         paging_align_to_lower_page((void *)(uintptr_t)phdr->p_vaddr),
         paging_align_to_lower_page(phdr_phys_address),
-        paging_align_address(phdr_phys_address + phdr->p_filesz), flags);
+        paging_align_address(phdr_phys_address + phdr->p_memsz), flags);
     if (ISERR(res)) {
       break;
     }
@@ -272,5 +272,215 @@ int process_load_switch(const char *filename, struct process **process) {
     process_switch(*process);
   }
 
+  return res;
+}
+
+static int process_find_free_allocation_index(struct process *process) {
+  int res = -ENOMEM;
+  for (int i = 0; i < LIEBE_OS_MAX_PROGRAM_ALLOCATIONS; i++) {
+    // findn the free spot on the array and return its index
+    if (process->allocations[i].ptr == 0) {
+      res = i;
+      break;
+    }
+  }
+
+  return res;
+}
+
+void *process_malloc(struct process *process, size_t size) {
+  // create mem for the allocation
+  void *ptr = kzalloc(size);
+  if (!ptr) {
+    // no mem
+    goto out_err;
+  }
+
+  // find the free index to store this allocation
+  int index = process_find_free_allocation_index(process);
+  if (index < 0) {
+    // out of allocations
+    goto out_err;
+  }
+
+  int res = paging_map_to(process->task->page_directory->directory_entry, ptr,
+                          ptr, paging_align_address(ptr + size),
+                          PAGING_IS_WRITEABLE | PAGING_IS_PRESENT |
+                              PAGING_ACCESS_FROM_ALL);
+  if (res < 0) {
+    goto out_err;
+  }
+  // store it so that this can be hadled when program crash
+  process->allocations[index].ptr = ptr;
+  process->allocations[index].size = size;
+
+  return ptr;
+
+out_err:
+  if (ptr) {
+    kfree(ptr);
+  }
+  return 0;
+}
+
+static int is_current_process_ptr(struct process *process, void *ptr) {
+  for (int i = 0; i < LIEBE_OS_MAX_PROGRAM_ALLOCATIONS; i++) {
+    if (process->allocations[i].ptr == ptr) {
+      // ptr found in allocation of the current process
+      return i;
+    }
+  }
+  // failed to find the allocation in the process ptr ie doesen't belong to
+  // current process
+  return -1;
+}
+
+void process_free(struct process *process, void *ptr) {
+  int allocation_idx = is_current_process_ptr(process, ptr);
+
+  if (allocation_idx < 0) {
+    // not part of current process
+    return;
+  }
+  struct process_allocation *allocation = &process->allocations[allocation_idx];
+
+  int res = paging_map_to(
+      process->task->page_directory->directory_entry, allocation->ptr,
+      allocation->ptr, paging_align_address(allocation->ptr + allocation->size),
+      0x00);
+
+  if (res < 0) {
+    return;
+  }
+
+  process->allocations[allocation_idx].ptr = 0x00;
+  process->allocations[allocation_idx].size = 0;
+
+  kfree(ptr);
+}
+
+void process_get_arguments(struct process *process, int *argc, char ***argv) {
+  *argc = process->arguments.argc;
+  *argv = process->arguments.argv;
+}
+
+int process_count_commnad_arguments(struct command_argument *root_argument) {
+  struct command_argument *current = root_argument;
+  int count = 0;
+  while (current) {
+    count++;
+    current = current->next;
+  }
+  return count;
+}
+
+int process_inject_arguments(struct process *process,
+                             struct command_argument *root_argument) {
+  int res = 0;
+  struct command_argument *current = root_argument;
+  int i = 0;
+  int argc = process_count_commnad_arguments(root_argument);
+  if (argc == 0) {
+    // no argumnets
+    res = -EIO;
+    goto exit_fn;
+  }
+
+  char **argv = process_malloc(process, sizeof(const char *) * argc);
+  if (!argv) {
+    // no memory
+    res = -ENOMEM;
+    goto exit_fn;
+  }
+
+  while (current) {
+    char *argument_str = process_malloc(process, sizeof(current->argument));
+    if (!argument_str) {
+      res = -ENOMEM;
+      goto exit_fn;
+    }
+
+    strncpy(argument_str, current->argument, sizeof(current->argument));
+    argv[i] = argument_str;
+    current = current->next;
+    i++;
+  }
+
+  process->arguments.argc = argc;
+  process->arguments.argv = argv;
+exit_fn:
+  return res;
+}
+
+int process_terminate_allocations(struct process *process) {
+  for (int i = 0; i < LIEBE_OS_MAX_PROGRAM_ALLOCATIONS; i++) {
+    kfree(process->allocations[i].ptr);
+  }
+  return 0;
+}
+
+int process_free_binary_data(struct process *process) {
+
+  kfree(process->ptr);
+  return 0;
+}
+
+int process_free_elf_data(struct process *process) {
+  elf_close(process->elf_file);
+  return 0;
+}
+
+int process_free_program_data(struct process *process) {
+  int res = 0;
+  switch (process->filetype) {
+  case PROCESS_FILETYPE_BINARY:
+    res = process_free_binary_data(process);
+    break;
+  case PROCESS_FILETYPE_ELF:
+    res = process_free_elf_data(process);
+    break;
+  default:
+    res = -EINVARG;
+  }
+  return res;
+}
+
+void process_switch_to_any() {
+  for (int i = 0; i < LIEBE_OS_MAX_PROCESSES; i++) {
+    if (processes[i]) {
+      process_switch(processes[i]);
+      return;
+    }
+  }
+  panic("No process to switch too \n");
+}
+
+static void process_unlink(struct process *process) {
+
+  // take the process from the list
+  processes[process->id] = 0x00;
+  if (current_process == process) {
+    process_switch_to_any();
+  }
+}
+
+int process_terminate(struct process *process) {
+  int res = 0;
+  // first free the allocations
+  res = process_terminate_allocations(process);
+  // free the actual data
+  res = process_free_program_data(process);
+  if (res < 0) {
+    goto exit_fn;
+  }
+
+  // free the process stack memory
+  kfree(process->stack);
+  // clear the task
+  task_free(process->task);
+
+  process_unlink(process);
+
+exit_fn:
   return res;
 }

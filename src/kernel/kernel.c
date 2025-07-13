@@ -144,9 +144,6 @@ void kernel_main() {
   // clear terminal
   terminal_initialize();
 
-  // print stuff for debugging
-  print("test1\ntest2\ntest3");
-
   memset(gdt_real, 0x00, sizeof(gdt_real));
 
   gdt_structured_to_gdt(gdt_real, gdt_structured, LIEBE_OS_TOTAL_GDT_SEGMENTS);
@@ -189,9 +186,9 @@ void kernel_main() {
   // enable interrupts
   //  enable_interrupts();
   struct process *process = 0;
-  int res = process_load_switch("0:/blank.elf", &process);
+  int res = process_load_switch("0:/shell.elf", &process);
   if (res != 0) {
-    print("panic");
+    panic("Failed to load the shell! Panic");
   }
 
   task_run_first_ever_task();
