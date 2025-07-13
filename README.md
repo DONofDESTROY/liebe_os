@@ -1,4 +1,6 @@
 # A toy os in the making
+<img width="772" height="516" alt="image" src="https://github.com/user-attachments/assets/88723786-2308-4c11-99ac-b42f87fc6bfa" />
+
 ⚠️Note: I am learning about this, this may contain wrong information. ⚠️
 
 ⚠️Note: Not tested on real hardware use it on your own risk ⚠️
@@ -6,9 +8,9 @@
 # Plan to add these
 - [X] ~Memory management.~
 - [X] ~file system~(still have write).
-- [ ] process management.
+- [X] ~process management.~
 - [ ] GUI(Maybe)
-- [ ] shell
+- [X] ~shell~(Base)
 - [ ] fswrite
 
 # DEBUGGING
